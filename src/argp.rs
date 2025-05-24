@@ -19,15 +19,26 @@ pub mod argparse {
             let mut current: &'static Argument = &Argument { trigger: "", mtrigger: "", isflag: false, isrequired: false };
             let mut current_val: String = "".to_string();
             let mut i: usize = 0;
+
+            let mut _trigs: Vec<String> = vec![];
+            let mut _mtrigs: Vec<String> = vec![];
+            for arg in self.args {
+                if _trigs.contains(&arg.trigger.to_string()) { panic!("{}", format!("FATAL redefinition of '{}' / '{}'", arg.trigger, arg.mtrigger)) }
+                if _mtrigs.contains(&arg.mtrigger.to_string()) { panic!("{}", format!("FATAL redefinition of '{}' / '{}'", arg.trigger, arg.mtrigger)) }
+                _trigs.push(arg.trigger.to_string());
+                _mtrigs.push(arg.mtrigger.to_string());
+            }
+
             for a in self.get_args() {
                 i += 1;
                 let aspl: Vec<_> = a.split(self.prefix).collect();
                 let astr: &str = aspl[aspl.len()-1];
                 if reading {
                     if reading && a.starts_with(self.prefix) { 
+                        if current_val.is_empty() { panic!("{}", format!("cannot define new variable ('{}') before defining the variable before ('{}')", a, current.trigger)); }
                         fargs.push(FinalizedArgument { arg: current, val: current_val.clone().trim().to_string(), flagged: false });
                         current = &Argument { trigger: "", mtrigger: "", isflag: false, isrequired: false };
-                        if current_val.is_empty() { panic!("attempting to add null value for '{}'", a); }
+                        if current_val.is_empty() { panic!("FATAL attempting to add null value for '{}'", a); }
 
                         current_val = "".to_string();
                         reading = false;
@@ -65,6 +76,15 @@ pub mod argparse {
                     if current_val.is_empty() && !current.isflag { panic!("attempting to add null value for '{}'", a); }
                     else if !current.isflag { fargs.push(FinalizedArgument { arg: current, val: current_val.clone().trim().to_string(), flagged: false }); }
                 }
+            }
+
+            let mut _utrigs: Vec<String> = vec![];
+            let mut _umtrigs: Vec<String> = vec![];
+            for arg in fargs.iter().clone() {
+                if _utrigs.contains(&arg.arg.trigger.to_string()) { panic!("{}", format!("FATAL redefinition of '{}' / '{}' in command line", arg.arg.trigger, arg.arg.mtrigger)) }
+                if _umtrigs.contains(&arg.arg.mtrigger.to_string()) { panic!("{}", format!("FATAL redefinition of '{}' / '{}' in command line", arg.arg.trigger, arg.arg.mtrigger)) }
+                _utrigs.push(arg.arg.trigger.to_string());
+                _umtrigs.push(arg.arg.mtrigger.to_string());
             }
 
             let mut missing: Vec<&str> = vec![];
