@@ -1,40 +1,23 @@
-mod argp;
+extern crate ffmpeg_next as ffmpeg;
 
-use argp::argparse::{Argument, ArgumentParser};
+use log::info;
 
-use std::env;
+use log4rs::append::console::ConsoleAppender;
+use log4rs::config::Config;
+use log4rs::config::Appender;
+use log4rs::config::runtime::Root;
+use log::LevelFilter;
 
-pub use crate::argp::argparse;
+fn setup_log4rs() {
+    let stdout = ConsoleAppender::builder().build();
+    let config = Config::builder()
+        .appender(Appender::builder().build("stdout", Box::new(stdout)))
+        .build(Root::builder().appender("stdout").build(LevelFilter::Info))
+        .unwrap();
+    log4rs::init_config(config).unwrap();
+}
 
 fn main() {
-    let argp = ArgumentParser {
-        argsvec: env::args().collect(),
-        prefix: '-',
-        args: &[
-            Argument {
-                trigger: "input",
-                mtrigger: "i",
-                isflag: false,
-                isrequired: true
-            },
-            Argument {
-                trigger: "output",
-                mtrigger: "o",
-                isflag: false,
-                isrequired: true
-            },
-            Argument {
-                trigger: "verbose",
-                mtrigger: "v",
-                isflag: true,
-                isrequired: false
-            }
-        ]
-    };
-
-    let fa = argp.compile();
-    for arg in fa.args.iter().clone() {
-        if arg.arg.isflag { println!("flag: {}", format!("{}, {}", arg.arg.trigger, arg.flagged)); }
-        else { println!("val: {}", format!("{}, {}", arg.arg.trigger, arg.val)); }
-    }
+    setup_log4rs();
+    info!("testing");
 }
